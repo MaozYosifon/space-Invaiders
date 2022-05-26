@@ -1,0 +1,36 @@
+body {
+    background-color: black;
+    color:white;
+    text-align: center;
+    
+}
+
+.board{
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display: none;
+}
+
+.board > table {
+    margin: auto;
+}
+
+.restart{
+    background-color: rgb(52, 48, 48)
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.hero {
+    display: inline-block;
+}
+
+.sky {background-color: gray}
+.earth {background-color: brown}
+
