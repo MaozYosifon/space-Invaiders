@@ -1,6 +1,8 @@
 const ALIEN_SPEED = 500;
+const LIVES = '❤️';
 var gIntervalAliens;
 var gTotalAliens = 0;
+var gAlienLaserInterval;
 
 // The following two variables represent the part of the matrix (some rows)
 // that we should shift (left, right, and bottom)
@@ -14,20 +16,114 @@ var gIsFirstMove;
 var gShiftedDown;
 var gWasRight;
 var gCurrentI;
+var gIsAlienLaserFinish;
+var gAlienIsShoot = false;
 
 function createAliens(board) {
-    for (var i = 0; i < board.length; i++) {
+    for (var i = 0; i < ALIENS_ROW_COUNT; i++) {
         for (var j = 0; j < ALIENS_ROW_LENGTH; j++) {
-            if (i < ALIENS_ROW_COUNT) {
-                board[i][j].gameObject = ALIEN;
-                gTotalAliens++;
+            if (i === 0) {
+                board[i][j].gameObject = ALIEN1;
+            } else if (i === 1) {
+                board[i][j].gameObject = ALIEN2;
+            } else if (i === 2) {
+                board[i][j].gameObject = ALIEN3;
             }
+            gTotalAliens++;
         }
     }
     // console.log(gTotalAliens);
 }
 
 function handleAlienHit(pos) {}
+
+// Sets an interval for shutting (blinking) the laser up towards Hero
+function alienShoot() {
+    var laserPos = getRandAlienPos(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
+    // console.log(laserPos);
+
+    // updateCell(laserPos, laser);
+    var laserNextPos = blinkAlienLaser(laserPos, ALIEN_LASER);
+    gAlienLaserInterval = setInterval(() => {
+        laserNextPos = blinkAlienLaser(laserNextPos, ALIEN_LASER);
+    }, 400);
+}
+
+function getRandAlienPos(fromI, toI) {
+    var aliensPos = [];
+    gAliensTopRowIdx = gCurrentI;
+    gAliensBottomRowIdx = gCurrentI + ALIENS_ROW_COUNT - 1;
+    // console.log(gAliensBottomRowIdx);
+    // for (var i = 0; i < gAliensBottomRowIdx; i++) {
+    for (var j = 0; j < ALIENS_ROW_LENGTH; j++) {
+        if (
+            gBoard[gAliensBottomRowIdx][j].gameObject === ALIEN1 ||
+            gBoard[gAliensBottomRowIdx][j].gameObject === ALIEN2 ||
+            gBoard[gAliensBottomRowIdx][j].gameObject === ALIEN3
+        ) {
+            // console.log('13113131313');
+            aliensPos.push({ i: gAliensBottomRowIdx + 1, j });
+        }
+    }
+    // }
+    var alienPos = aliensPos[getRandomInt(0, aliensPos.length - 1)];
+    // console.log(alienPos);
+    // console.log(aliensPos);
+    return alienPos;
+}
+
+// renders a LASER at specific cell for short time and removes it
+function blinkAlienLaser(pos, laser) {
+    var currentPos = pos;
+    if (gIsAlienLaserFinish) {
+        updateCell(currentPos, EMPTY);
+        clearInterval(laserInterval);
+        // gHero.isShoot = false;/////change to aliens
+        gIsAlienLaserFinish = false;
+        return;
+    }
+    // console.log(pos);
+    var nextPos = {
+        i: currentPos.i + 1,
+        j: currentPos.j,
+    };
+    // if (nextPos.type === EARTH) {
+    //     updateCell(currentPos, EMPTY);
+    //     return;
+    var nextCell = gBoard[nextPos.i][nextPos.j].gameObject;
+    console.log(nextCell);
+    if (nextCell === getHeroHTML()) {
+        console.log('hero');
+        // var elLives = document.querySelector('lives');
+        gHero.lives--;
+        setLivesLeft();
+        clearInterval(gAlienLaserInterval);
+        updateCell(currentPos, EMPTY);
+        console.log(gHero.lives);
+        gIsAlienLaserFinish = true;
+        if (gHero.lives === 0) gameOver();
+        return;
+    } else if (nextPos.i === gBoard.length - 1) {
+        updateCell(currentPos, EMPTY);
+        gIsAlienLaserFinish = true;
+        clearInterval(gAlienLaserInterval);
+        return;
+    }
+
+    updateCell(currentPos, EMPTY);
+    updateCell(nextPos, laser);
+
+    currentPos = nextPos;
+    return currentPos;
+}
+function setLivesLeft() {
+    var elLives = document.querySelector('.lives');
+    strHTML = '';
+    for (var i = 0; i < gHero.lives; i++) {
+        strHTML += LIVES;
+    }
+    elLives.innerHTML = strHTML;
+}
 
 function shiftBoardRight(fromI, toI) {
     for (var i = fromI; i < toI; i++) {
@@ -66,7 +162,11 @@ function getAlienEndPos() {
     var endPos = -1;
     for (var i = 0; i < gBoard.length; i++) {
         for (var j = 0; j < gBoard[i].length; j++) {
-            if (gBoard[i][j].gameObject === ALIEN) {
+            if (
+                gBoard[i][j].gameObject === ALIEN1 ||
+                gBoard[i][j].gameObject === ALIEN2 ||
+                gBoard[i][j].gameObject === ALIEN3
+            ) {
                 if (endPos < j) endPos = j;
             }
         }
@@ -78,7 +178,11 @@ function getAlienStartPos() {
     var startPos = gBoard.length;
     for (var i = 0; i < gBoard.length; i++) {
         for (var j = 0; j < gBoard[i].length; j++) {
-            if (gBoard[i][j].gameObject === ALIEN) {
+            if (
+                gBoard[i][j].gameObject === ALIEN1 ||
+                gBoard[i][j].gameObject === ALIEN2 ||
+                gBoard[i][j].gameObject === ALIEN3
+            ) {
                 if (startPos > j) startPos = j;
             }
         }
@@ -90,56 +194,35 @@ function getAlienStartPos() {
 // when the aliens are reaching the hero row - interval stops
 function moveAliens() {
     if (gIsAlienFreeze) return;
-    if (gWasRight) {
-        console.log('Right');
+    if (gWasRight && getAlienEndPos() !== gBoard.length - 1) {
+        // console.log('Right');
         shiftBoardRight(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
-        if (getAlienEndPos() === gBoard.length - 1 && gWasRight) {
-            renderBoard(gBoard);
-            shiftBoardDown(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
-            gWasRight = !gWasRight;
-        }
-    } else if (!gWasRight) {
-        console.log('Left');
+        renderBoard(gBoard);
+        // if (getAlienEndPos() === gBoard.length - 1 && gWasRight) {
+        //     renderBoard(gBoard);
+        //     shiftBoardDown(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
+        //     gWasRight = !gWasRight;
+        // }
+    } else if (!gWasRight && getAlienStartPos() !== 0) {
+        // console.log('Left');
         shiftBoardLeft(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
-        if (getAlienStartPos() === 0 && !gWasRight) {
-            renderBoard(gBoard);
-            shiftBoardDown(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
-            gWasRight = !gWasRight;
-        }
+        renderBoard(gBoard);
+
+        // if (getAlienStartPos() === 0 && !gWasRight) {
+        //     renderBoard(gBoard);
+        //     shiftBoardDown(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
+        //     gWasRight = !gWasRight;
+        // }
+    } else if (getAlienEndPos() === gBoard.length - 1 || getAlienStartPos() === 0) {
+        // renderBoard(gBoard);
+        shiftBoardDown(gCurrentI, gCurrentI + ALIENS_ROW_COUNT);
+        gWasRight = !gWasRight;
+        renderBoard(gBoard);
     }
-    renderBoard(gBoard);
-
-    // if (
-    //     (getAlienEndPos() === gBoard.length - 1 && shiftedDown) ||
-    //     (getAlienStartPos() === 0 && !isFirstMove && shiftedDown)
-    // ) {
-    //     console.log('Down');
-    //     shiftBoardDown(currentI, currentI + ALIENS_ROW_COUNT);
-    //     shiftedDown = !shiftedDown;
-    // } else if (wasRight && !shiftedDown) {
-    //     console.log('Right');
-    //     shiftBoardRight(currentI, currentI + ALIENS_ROW_COUNT);
-    //     if (getAlienEndPos() === gBoard.length - 1) {
-    //         wasRight = !wasRight;
-    //         shiftedDown = !shiftedDown;
-    //         shiftBoardDown(currentI, currentI + ALIENS_ROW_COUNT);
-
-    //     }
-    // } else if (!wasRight && !shiftedDown) {
-    //     console.log('Left');
-    //     shiftBoardLeft(currentI, currentI + ALIENS_ROW_COUNT);
-    //     if (getAlienStartPos() === 0) {
-    //         console.log('chif');
-    //         wasRight = !wasRight;
-    //         shiftedDown = !shiftedDown;
-    //         shiftBoardDown(currentI, currentI + ALIENS_ROW_COUNT);
-
-    //     }
-    // }
-    // renderBoard(gBoard);
 }
 
-function pauseOnOf() {
+function pauseOnOf(el) {
+    el.blur();
     gIsAlienFreeze = !gIsAlienFreeze;
 }
 

@@ -5,32 +5,41 @@ var gIsFinish = false;
 
 // creates the hero and place it on board
 function createHero(board) {
-    gHero = { pos: { i: 12, j: 5 }, isShoot: false, isSuper: false, isShielded: false, superCount: 3, shieldsCount: 3 };
+    gHero = {
+        pos: { i: 12, j: 5 },
+        isShoot: false,
+        isSuper: false,
+        isShielded: false,
+        superCount: 3,
+        shieldsCount: 3,
+        lives: 3,
+    };
     board[gHero.pos.i][gHero.pos.j].gameObject = HERO;
 }
 
 // Handle game keys
 function onKeyDown(ev) {
     moveHero(ev);
-    if (ev.code === 'Space') {
-        // console.log(ev);
-        shoot(LASER);
-    } else if (ev.code === 'KeyN') {
-        shoot(LASER_N);
-    } else if (ev.code === 'KeyX') {
-        if (!gHero.superCount) return;
-        gHero.isSuper = true;
-        console.log(gHero.isSuper);
-        gHero.superCount--;
-        shoot(LASER_X);
-        console.log(gHero.isSuper);
-        gHero.isSuper = false;
-        console.log(gHero.isSuper);
-    } else if (ev.code === 'KeyZ') {
-        if (gHero.isShielded) return;
-        shieldActive();
+
+    switch (ev.code) {
+        case 'Space':
+            heroShoot(LASER);
+            break;
+        case 'KeyN':
+            heroShoot(LASER_N);
+            break;
+        case 'KeyX':
+            if (!gHero.superCount) return;
+            gHero.isSuper = true;
+            gHero.superCount--;
+            heroShoot(LASER_X);
+            gHero.isSuper = false;
+            break;
+        case 'KeyZ':
+            if (gHero.isShielded) return;
+            shieldActive();
+            break;
     }
-    // console.log(ev);
 }
 
 // Move the hero right (1) or left (-1)
@@ -62,7 +71,7 @@ function moveHero(dir) {
 }
 
 // Sets an interval for shutting (blinking) the laser up towards aliens
-function shoot(laser) {
+function heroShoot(laser) {
     // if (!gHero.isSuper) {
     if (gHero.isShoot) return;
     // }
@@ -102,17 +111,17 @@ function blinkLaser(pos, laser) {
     updateCell(currentPos, EMPTY);
     updateCell(nextPos, LASER);
 
-    if (nextPos.i === 0 || nextCell === ALIEN || nextCell === CANDY) {
+    if (nextPos.i === 0 || nextCell === ALIEN1 || nextCell === ALIEN2 || nextCell === ALIEN3 || nextCell === CANDY) {
         if (nextCell === CANDY) {
             updateScore(50);
             gIsAlienFreeze = true;
             setTimeout(() => {
                 gIsAlienFreeze = false;
             }, 5000);
-        } else if (nextCell === ALIEN && laser === LASER) {
+        } else if (laser === LASER) {
             --gTotalAliens;
             updateScore(10);
-        } else if (nextCell === ALIEN && laser === LASER_N) {
+        } else if (laser === LASER_N) {
             var negsLoc = countNegsAround(gBoard, nextPos.i, nextPos.j);
             for (var i = 0; i < negsLoc.length; i++) {
                 updateCell(negsLoc[i], EMPTY);
@@ -120,10 +129,11 @@ function blinkLaser(pos, laser) {
                 updateScore(10);
             }
             --gTotalAliens;
-        } else if (nextCell === ALIEN && laser === LASER_X) {
+        } else if (laser === LASER_X) {
             --gTotalAliens;
             updateScore(10);
         }
+        // console.log('gTotalAliens', gTotalAliens);
         gIsFinish = true;
         if (gTotalAliens === 0) gameOver(true);
     }
@@ -138,11 +148,11 @@ function getNextLocation(eventKeyboard) {
     };
     switch (eventKeyboard.code) {
         case 'ArrowLeft':
-            console.log('left');
+            // console.log('left');
             nextLocation.j--;
             break;
         case 'ArrowRight':
-            console.log('right');
+            // console.log('right');
             nextLocation.j++;
             break;
         default:
@@ -157,21 +167,18 @@ function getHeroHTML() {
 
 function countNegsAround(mat, rowIdx, colIdx) {
     var negsLoc = [];
-    var count = 0;
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i > mat.length - 1) continue;
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (j < 0 || j > mat[0].length - 1) continue;
             if (i === rowIdx && j === colIdx) continue;
             var currCell = gBoard[i][j].gameObject;
-            if (currCell === ALIEN) {
-                console.log('asd');
+            if (currCell === ALIEN1 || currCell === ALIEN2 || currCell === ALIEN3) {
                 negsLoc.push({ i, j });
             }
         }
     }
     return negsLoc;
-    return count;
 }
 
 function shieldActive() {

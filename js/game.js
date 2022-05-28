@@ -2,7 +2,10 @@ const BOARD_SIZE = 14;
 const ALIENS_ROW_LENGTH = 8;
 const ALIENS_ROW_COUNT = 3;
 const HERO = '🛸';
-const ALIEN = '👽';
+const ALIEN1 = '👽';
+const ALIEN2 = '👻';
+const ALIEN3 = '👾';
+const ALIEN_LASER = '|';
 const LASER = '⤊';
 const LASER_X = '^';
 const LASER_N = '#';
@@ -17,6 +20,7 @@ const BUNKER = '🛡';
 // Matrix of cell objects. e.g.: {type: SKY, gameObject: ALIEN}
 var gBoard;
 var gCandyInterval;
+var gFirstGame = true;
 
 var gGame = {
     isOn: false,
@@ -27,16 +31,30 @@ var gGame = {
 function init() {
     var gElRestartBtn = document.querySelector('.restart');
     gElRestartBtn.style.display = 'none';
-}
-
-function startReset() {
     gBoard = createBoard();
     createHero(gBoard);
+    renderBoard(gBoard);
+    elReset = document.querySelector('.reset');
+    elReset.innerText = 'Start Game';
+}
+
+function startReset(el) {
+    el.blur();
+    if (!gFirstGame) init();
+    gFirstGame = false;
+
     console.log(gBoard);
-    clearInterval(gIntervalAliens);
+    elReset = document.querySelector('.reset');
+    elReset.innerText = 'Restart';
+    if (gGame.isOn) {
+        clearInterval(gAlienLaserInterval);
+        clearInterval(gIntervalAliens);
+        clearInterval(gCandyInterval);
+    }
+    gTotalAliens = 0;
     createAliens(gBoard);
-    // gTotalAliens = 0;
     gIntervalAliens = setInterval(moveAliens, ALIEN_SPEED);
+    gIntervalAliens = setInterval(alienShoot, 5000);
     gCandyInterval = setInterval(addCandy, 10000);
     gIsAlienFreeze = false;
     gIsFirstMove = true;
@@ -117,6 +135,7 @@ function gameOver(isWin) {
     openModal(isWin);
     gGame.isOn = false;
     clearInterval(gIntervalAliens);
+    clearInterval(gAlienLaserInterval);
     clearInterval(gCandyInterval);
 }
 
@@ -134,7 +153,7 @@ function addCandy() {
     gBoard[randCandy.i][randCandy.j].gameObject = CANDY;
     updateCell(randCandy, CANDY);
     setTimeout(() => {
-        console.log('candy');
+        // console.log('candy');
         randCandy.gameObject = EMPTY;
         updateCell(randCandy, EMPTY);
     }, 5000);

@@ -18,7 +18,12 @@ function getEmptyCells() {
     var emptyCells = [];
 
     for (var j = 0; j < gBoard[0].length; j++) {
-        if (gBoard[0][j].gameObject === ALIEN) continue;
+        if (
+            gBoard[0][j].gameObject === ALIEN1 ||
+            gBoard[0][j].gameObject === ALIEN2 ||
+            gBoard[0][j].gameObject === ALIEN3
+        )
+            continue;
         emptyCells.push({ i: 0, j });
     }
 

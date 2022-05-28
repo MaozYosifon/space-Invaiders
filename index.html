@@ -10,9 +10,10 @@
 </head>
 
 <body onload="init()" onkeydown="onKeyDown(event)">
-    <h2>Score: <span>0</span></h2>
-    <button class="reset" onclick="startReset()">start/reset</button>
-    <button class="pause" onclick="pauseOnOf()">pause</button>
+    <h3>Score: <span>0</span></h3>
+    <h3>lives:<span class="lives">❤️❤️❤️</span></h3>
+    <button class="reset" onclick="startReset(this)">start/reset</button>
+    <button class="pause" onclick="pauseOnOf(this)">pause</button>
     <div class="board"></div>
     <div class="restart">
         <h2></h2>
